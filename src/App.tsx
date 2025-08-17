@@ -61,8 +61,15 @@ function App() {
         <Card.Root width={"300px"}>
           <Card.Header>Ayo Glasses</Card.Header>
           <Card.Body>
-            <Flex alignItems="center" justifyContent="space-between">
-              Battery: {isNaN(ble.battery) ? "?" : `${ble.battery}%`}
+            <Flex alignItems="end" justifyContent="space-between">
+              <SimpleGrid columns={2} gap="0 10px">
+                <Box>Elapsed time:</Box>
+                <Box>
+                  {isNaN(ble.elapsedTime) ? "?" : `${ble.elapsedTime} min`}
+                </Box>
+                <Box>Battery:</Box>
+                <Box>{isNaN(ble.battery) ? "?" : `${ble.battery}%`}</Box>
+              </SimpleGrid>
               <Popover.Root positioning={popoverPlacement}>
                 <Popover.Trigger asChild>
                   <IconButton

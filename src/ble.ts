@@ -28,6 +28,7 @@ const ble = createSlice({
     initialState: {
         status: "disconnected" as BleConnectStatus,
         battery: NaN,
+        elapsedTime: NaN,
         deviceId: "",
         firmwareVersion: "",
         hardwareVersion: "",
@@ -49,6 +50,7 @@ const ble = createSlice({
         didDisconnectBle: (state) => {
             state.status = "disconnected";
             state.battery = NaN;
+            state.elapsedTime = NaN;
             state.deviceId = "";
             state.firmwareVersion = "";
             state.hardwareVersion = "";
@@ -59,6 +61,9 @@ const ble = createSlice({
         },
         didReadBatteryLevel: (state, action: PayloadAction<number>) => {
             state.battery = action.payload;
+        },
+        didReadElapsedTime: (state, action: PayloadAction<number>) => {
+            state.elapsedTime = action.payload;
         },
         didReadFirmwareVersion: (state, action: PayloadAction<string>) => {
             state.firmwareVersion = action.payload;
@@ -264,6 +269,9 @@ startAppListening({
 
                 listenerApi.dispatch(
                     ble.actions.didReadBatteryLevel(batteryLevel),
+                );
+                listenerApi.dispatch(
+                    ble.actions.didReadElapsedTime(elapsedTime),
                 );
             };
             classesInfoCharResult.ret.addEventListener(
