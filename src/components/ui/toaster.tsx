@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Toaster as ChakraToaster,
@@ -6,9 +6,8 @@ import {
   Spinner,
   Stack,
   Toast,
-} from "@chakra-ui/react"
-import { toaster } from "./toaster-global"
-
+} from "@chakra-ui/react";
+import { toaster } from "./toaster-global";
 
 export const Toaster = () => {
   return (
@@ -35,5 +34,5 @@ export const Toaster = () => {
         )}
       </ChakraToaster>
     </Portal>
-  )
-}
+  );
+};

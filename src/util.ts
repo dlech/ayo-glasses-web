@@ -1,4 +1,3 @@
-
 type CheckedResult<T> = {
     ret: T;
     err: undefined;
@@ -15,12 +14,22 @@ type UncheckedResult<T> = {
  * @param promise The promise to wrap.
  * @returns An object containing the result or error.
  */
-export async function maybe<T>(promise: Promise<T>): Promise<UncheckedResult<T>> {
+export async function maybe<T>(
+    promise: Promise<T>,
+): Promise<UncheckedResult<T>> {
     try {
         const result = await promise;
-        return { ret: result, err: undefined, ok: (): this is CheckedResult<T> => true };
+        return {
+            ret: result,
+            err: undefined,
+            ok: (): this is CheckedResult<T> => true,
+        };
     } catch (error) {
-        return { ret: undefined, err: error, ok: (): this is CheckedResult<T> => false };
+        return {
+            ret: undefined,
+            err: error,
+            ok: (): this is CheckedResult<T> => false,
+        };
     }
 }
 
@@ -55,7 +64,9 @@ class ExitStack {
     }
 }
 
-export async function withExitStack<T>(func: (stack: ExitStack) => Promise<T>): Promise<T> {
+export async function withExitStack<T>(
+    func: (stack: ExitStack) => Promise<T>,
+): Promise<T> {
     const exitStack = new ExitStack();
     try {
         return await func(exitStack);
