@@ -65,7 +65,11 @@ function App() {
               <SimpleGrid columns={2} gap="0 10px">
                 <Box>Elapsed time:</Box>
                 <Box>
-                  {isNaN(ble.elapsedTime) ? "?" : `${ble.elapsedTime} min`}
+                  {isNaN(ble.elapsedTime)
+                    ? "?"
+                    : ble.running
+                      ? `${ble.elapsedTime} min`
+                      : "Off"}
                 </Box>
                 <Box>Battery:</Box>
                 <Box>{isNaN(ble.battery) ? "?" : `${ble.battery}%`}</Box>

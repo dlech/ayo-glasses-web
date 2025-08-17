@@ -29,6 +29,7 @@ const ble = createSlice({
         status: "disconnected" as BleConnectStatus,
         battery: NaN,
         elapsedTime: NaN,
+        running: false,
         deviceId: "",
         firmwareVersion: "",
         hardwareVersion: "",
@@ -51,6 +52,7 @@ const ble = createSlice({
             state.status = "disconnected";
             state.battery = NaN;
             state.elapsedTime = NaN;
+            state.running = false;
             state.deviceId = "";
             state.firmwareVersion = "";
             state.hardwareVersion = "";
@@ -59,8 +61,17 @@ const ble = createSlice({
         didGetBleDevice: (state, action: PayloadAction<string>) => {
             state.deviceId = action.payload;
         },
-        didReadBatteryLevel: (state, action: PayloadAction<number>) => {
-            state.battery = action.payload;
+        didReadGlassesInfo: (
+            state,
+            action: PayloadAction<{
+                batteryLevel: number;
+                elapsedTime: number;
+                therapyState: number;
+            }>,
+        ) => {
+            state.battery = action.payload.batteryLevel;
+            state.elapsedTime = action.payload.elapsedTime;
+            state.running = action.payload.therapyState === 2;
         },
         didReadElapsedTime: (state, action: PayloadAction<number>) => {
             state.elapsedTime = action.payload;
@@ -258,9 +269,9 @@ startAppListening({
                 const unknownValue = value.getUint8(1);
                 const elapsedTime = value.getUint8(2);
                 const unknownValue2 = value.getUint8(3);
-                const autoManual = value.getUint8(4);
+                const therapyState = value.getUint8(4);
 
-                const newValue = `${batteryLevel} ${unknownValue} ${elapsedTime} ${unknownValue2} ${autoManual}`;
+                const newValue = `${batteryLevel} ${unknownValue} ${elapsedTime} ${unknownValue2} ${therapyState}`;
 
                 if (newValue != oldValue) {
                     console.debug("Characteristic value changed:", newValue);
@@ -268,10 +279,11 @@ startAppListening({
                 }
 
                 listenerApi.dispatch(
-                    ble.actions.didReadBatteryLevel(batteryLevel),
-                );
-                listenerApi.dispatch(
-                    ble.actions.didReadElapsedTime(elapsedTime),
+                    ble.actions.didReadGlassesInfo({
+                        batteryLevel,
+                        elapsedTime,
+                        therapyState,
+                    }),
                 );
             };
             classesInfoCharResult.ret.addEventListener(
