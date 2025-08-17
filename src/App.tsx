@@ -13,8 +13,8 @@ import {
 import { ColorModeButton } from "./components/ui/color-mode";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { useMemo } from "react";
-import { connectBle, disconnectBle } from "./ble";
 import { VscInfo } from "react-icons/vsc";
+import { connectBle, disconnectBle } from "./ble";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -28,11 +28,11 @@ function App() {
       case "disconnected":
         return () => dispatch(connectBle());
       case "connected":
-        return () => dispatch(disconnectBle(ble.deviceId));
+        return () => dispatch(disconnectBle());
       default:
         return () => {};
     }
-  }, [dispatch, ble.status, ble.deviceId]);
+  }, [dispatch, ble.status]);
 
   const buttonContent = useMemo(() => {
     switch (ble.status) {

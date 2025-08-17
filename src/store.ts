@@ -1,8 +1,13 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import ble from "./ble";
+import { listenerMiddleware } from "./listener-middleware";
 
 export const store = configureStore({
-    reducer: { ble },
+    reducer: combineReducers({
+        ble,
+    }),
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().prepend(listenerMiddleware.middleware),
 });
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
