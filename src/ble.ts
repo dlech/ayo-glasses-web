@@ -240,17 +240,31 @@ startAppListening({
                 return;
             }
 
+            let oldValue = "";
+
             const onCharacteristicValueChanged = () => {
-                console.debug("Characteristic value changed");
                 const value = classesInfoCharResult.ret.value;
                 if (!value) {
+                    console.debug("Characteristic value changed with no value");
                     return;
                 }
 
-                console.debug(value);
+                const batteryLevel = value.getUint8(0);
+                const unknownValue = value.getUint8(1);
+                const elapsedTime = value.getUint8(2);
+                const unknownValue2 = value.getUint8(3);
+                const autoManual = value.getUint8(4);
 
-                const battery = value.getUint8(0);
-                listenerApi.dispatch(ble.actions.didReadBatteryLevel(battery));
+                const newValue = `${batteryLevel} ${unknownValue} ${elapsedTime} ${unknownValue2} ${autoManual}`;
+
+                if (newValue != oldValue) {
+                    console.debug("Characteristic value changed:", newValue);
+                    oldValue = newValue;
+                }
+
+                listenerApi.dispatch(
+                    ble.actions.didReadBatteryLevel(batteryLevel),
+                );
             };
             classesInfoCharResult.ret.addEventListener(
                 "characteristicvaluechanged",
