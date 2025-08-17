@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { maybe, withExitStack } from "./util";
 import { startAppListening } from "./listener-middleware";
+import { toaster } from "./components/ui/toaster-global";
 
 // Bluetooth SIG assigned numbers
 const novalogyCompanyId = 0x0419;
@@ -74,19 +75,49 @@ const ble = createSlice({
 export default ble.reducer;
 export const { connectBle, disconnectBle } = ble.actions;
 
+function createUnexpectedErrorToast() {
+    toaster.create({
+        id: "unexpected-error",
+        title: "Unexpected error",
+        description:
+            "Please check the console in the Web Developers Tools for more info. If the error is repeatable, please report it.",
+        type: "error",
+        closable: true,
+        duration: 5000,
+    });
+}
+
 startAppListening({
     actionCreator: ble.actions.connectBle,
     effect: async (_action, listenerApi) =>
         withExitStack(async (stack) => {
             if (navigator.bluetooth === undefined) {
-                console.debug("Bluetooth not supported");
+                console.debug("navigator.bluetooth is undefined");
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+                toaster.create({
+                    id: "no-web-ble",
+                    title: "WebBluetooth not supported",
+                    description:
+                        "Please use a web browser such as Google Chrome or Microsoft Edge that supports WebBluetooth.",
+                    type: "error",
+                    closable: true,
+                    duration: 5000,
+                });
                 return;
             }
 
             if (!(await navigator.bluetooth.getAvailability())) {
                 console.debug("Bluetooth not available");
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+                toaster.create({
+                    id: "bluetooth-unavailable",
+                    title: "Bluetooth not available",
+                    description:
+                        "Please ensure that Bluetooth is enabled on your device and the browser has permission to access it.",
+                    type: "error",
+                    closable: true,
+                    duration: 5000,
+                });
                 return;
             }
 
@@ -107,8 +138,19 @@ startAppListening({
                 }),
             );
             if (!deviceResult.ok()) {
-                console.debug(deviceResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    deviceResult.err instanceof DOMException &&
+                    deviceResult.err.name === "NotFoundError"
+                ) {
+                    // User cancelled the device selection dialog
+                    console.debug(deviceResult.err);
+                    return;
+                }
+
+                console.error(deviceResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -129,8 +171,9 @@ startAppListening({
             );
 
             if (device.gatt === undefined) {
-                console.debug("GATT not available");
+                console.error("GATT not available");
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -138,6 +181,17 @@ startAppListening({
             if (!serverResult.ok()) {
                 console.debug(serverResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                toaster.create({
+                    id: "gatt-connection-failed",
+                    title: "Connection failed",
+                    description:
+                        "Please try again. If the problem persists, try restarting your device.",
+                    type: "error",
+                    closable: true,
+                    duration: 5000,
+                });
+
                 return;
             }
 
@@ -148,8 +202,19 @@ startAppListening({
                 serverResult.ret.getPrimaryService(glassesInfoServiceUuid),
             );
             if (!glassesInfoServiceResult.ok()) {
-                console.debug(glassesInfoServiceResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    glassesInfoServiceResult.err instanceof DOMException &&
+                    glassesInfoServiceResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(glassesInfoServiceResult.err);
+                    return;
+                }
+
+                console.error(glassesInfoServiceResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -159,8 +224,19 @@ startAppListening({
                 ),
             );
             if (!classesInfoCharResult.ok()) {
-                console.debug(classesInfoCharResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    classesInfoCharResult.err instanceof DOMException &&
+                    classesInfoCharResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(classesInfoCharResult.err);
+                    return;
+                }
+
+                console.error(classesInfoCharResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -191,8 +267,20 @@ startAppListening({
                 classesInfoCharResult.ret.startNotifications(),
             );
             if (!classesInfoCharStartNotifyResult.ok()) {
-                console.debug(classesInfoCharStartNotifyResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    classesInfoCharStartNotifyResult.err instanceof
+                        DOMException &&
+                    classesInfoCharStartNotifyResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(classesInfoCharStartNotifyResult.err);
+                    return;
+                }
+
+                console.error(classesInfoCharStartNotifyResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -203,8 +291,19 @@ startAppListening({
                 serverResult.ret.getPrimaryService(deviceInfoServiceUuid),
             );
             if (!deviceInfoServiceResult.ok()) {
-                console.debug(deviceInfoServiceResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    deviceInfoServiceResult.err instanceof DOMException &&
+                    deviceInfoServiceResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(deviceInfoServiceResult.err);
+                    return;
+                }
+
+                console.error(deviceInfoServiceResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -216,8 +315,19 @@ startAppListening({
                 ),
             );
             if (!firmwareRevisionCharResult.ok()) {
-                console.debug(firmwareRevisionCharResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    firmwareRevisionCharResult.err instanceof DOMException &&
+                    firmwareRevisionCharResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(firmwareRevisionCharResult.err);
+                    return;
+                }
+
+                console.error(firmwareRevisionCharResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -225,8 +335,19 @@ startAppListening({
                 firmwareRevisionCharResult.ret.readValue(),
             );
             if (!firmwareVersionResult.ok()) {
-                console.debug(firmwareVersionResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    firmwareVersionResult.err instanceof DOMException &&
+                    firmwareVersionResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(firmwareVersionResult.err);
+                    return;
+                }
+
+                console.error(firmwareVersionResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -242,8 +363,19 @@ startAppListening({
                 ),
             );
             if (!hardwareRevisionCharResult.ok()) {
-                console.debug(hardwareRevisionCharResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    hardwareRevisionCharResult.err instanceof DOMException &&
+                    hardwareRevisionCharResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(hardwareRevisionCharResult.err);
+                    return;
+                }
+
+                console.error(hardwareRevisionCharResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -251,8 +383,19 @@ startAppListening({
                 hardwareRevisionCharResult.ret.readValue(),
             );
             if (!hardwareVersionResult.ok()) {
-                console.debug(hardwareVersionResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    hardwareVersionResult.err instanceof DOMException &&
+                    hardwareVersionResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(hardwareVersionResult.err);
+                    return;
+                }
+
+                console.error(hardwareVersionResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -266,8 +409,19 @@ startAppListening({
                 device.gatt.getPrimaryService(glassesServiceUuid),
             );
             if (!glassesServiceResult.ok()) {
-                console.debug(glassesServiceResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    glassesServiceResult.err instanceof DOMException &&
+                    glassesServiceResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(glassesServiceResult.err);
+                    return;
+                }
+
+                console.error(glassesServiceResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -279,8 +433,19 @@ startAppListening({
                 ),
             );
             if (!serialNumberCharResult.ok()) {
-                console.debug(serialNumberCharResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    serialNumberCharResult.err instanceof DOMException &&
+                    serialNumberCharResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(serialNumberCharResult.err);
+                    return;
+                }
+
+                console.error(serialNumberCharResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 
@@ -288,8 +453,19 @@ startAppListening({
                 serialNumberCharResult.ret.readValue(),
             );
             if (!serialNumberResult.ok()) {
-                console.debug(serialNumberResult.err);
                 listenerApi.dispatch(ble.actions.didFailToConnectBle());
+
+                if (
+                    serialNumberResult.err instanceof DOMException &&
+                    serialNumberResult.err.name === "NetworkError"
+                ) {
+                    // Device disconnected
+                    console.debug(serialNumberResult.err);
+                    return;
+                }
+
+                console.error(serialNumberResult.err);
+                createUnexpectedErrorToast();
                 return;
             }
 

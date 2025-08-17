@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "./hooks";
 import { useMemo } from "react";
 import { VscInfo } from "react-icons/vsc";
 import { connectBle, disconnectBle } from "./ble";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -47,6 +48,7 @@ function App() {
 
   return (
     <>
+      <Toaster />
       <Flex
         alignItems="center"
         justifyContent="center"
